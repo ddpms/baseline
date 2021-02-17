@@ -1,7 +1,8 @@
-
-import torch
 from copy import deepcopy
 import numpy as np
+
+import torch
+
 """
 모델과 데이터를 받아 실제 학습 iteration을 수행하는 클래스 정의
 """
@@ -9,12 +10,7 @@ import numpy as np
 
 class Trainer():
 
-    def __init__(
-        self,
-        model,
-        optimizer,
-        crit
-    ):
+    def __init__(self, model, optimizer, crit):
         self.model = model
         self.optimizer = optimizer
         self.crit = crit
@@ -40,9 +36,9 @@ class Trainer():
 
         for i, (x_i, y_i) in enumerate(zip(x, y)):
             y_hat_i = self.model(x_i)
-            loss_i = self.crit(y_hat_i, y_i.sequeeze())
+            loss_i = self.crit(y_hat_i, y_i.squeeze())
 
-            # Inintialize the gradient of the model
+            # Initialize the gradients of the model.
             self.optimizer.zero_grad()
             loss_i.backward()
 
@@ -50,33 +46,33 @@ class Trainer():
 
             if config.verbose >= 2:
                 print("Train Iteration(%d/%d): loss=%.4e" %
-                      (i+1, len(x), float(loss_i)))
+                      (i + 1, len(x), float(loss_i)))
 
             # Don't forget to detach to prevent memory leak.
             total_loss += float(loss_i)
 
-        return total_loss/len(x)
+        return total_loss / len(x)
 
     def _validate(self, x, y, config):
         # Turn evaluation mode on.
         self.model.eval()
 
-        # Turn on the no_grad mode to make more efficiently.
+        # Turn on the no_grad mode to make more efficintly.
         with torch.no_grad():
             x, y = self._batchify(x, y, config.batch_size, random_split=False)
             total_loss = 0
 
             for i, (x_i, y_i) in enumerate(zip(x, y)):
-                y_hat_i = self.model(x, y)
-                loss_i = self.crit(y_hat_i, y_i.sequeeze())
+                y_hat_i = self.model(x_i)
+                loss_i = self.crit(y_hat_i, y_i.squeeze())
 
                 if config.verbose >= 2:
                     print("Valid Iteration(%d/%d): loss=%.4e" %
-                          (i+1, len(x), float(loss_i)))
+                          (i + 1, len(x), float(loss_i)))
 
                 total_loss += float(loss_i)
 
-        return total_loss/len(x)
+            return total_loss / len(x)
 
     def train(self, train_data, valid_data, config):
         lowest_loss = np.inf
@@ -86,13 +82,18 @@ class Trainer():
             train_loss = self._train(train_data[0], train_data[1], config)
             valid_loss = self._validate(valid_data[0], valid_data[1], config)
 
-        # You must use deep copy to take a sanpshot of current best weigths.
-        if valid_loss <= lowest_loss:
-            lowest_loss = valid_loss
-            best_model = deepcopy(self.model.state_dict)
+            # You must use deep copy to take a snapshot of current best weights.
+            if valid_loss <= lowest_loss:
+                lowest_loss = valid_loss
+                best_model = deepcopy(self.model.state_dict())
 
-        print("Epoch(%d/%d): train_loss=%.4e valid_loss=%.4e lowest_loss=%.4e" %
-              (epoch_index+1, config.n_epochs, train_loss, valid_loss, lowest_loss))
+            print("Epoch(%d/%d): train_loss=%.4e  valid_loss=%.4e  lowest_loss=%.4e" % (
+                epoch_index + 1,
+                config.n_epochs,
+                train_loss,
+                valid_loss,
+                lowest_loss,
+            ))
 
-    # Restore to best model.
-    self.model.load_state_dict(best_model)
+        # Restore to best model.
+        self.model.load_state_dict(best_model)

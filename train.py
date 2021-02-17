@@ -1,10 +1,10 @@
 import argparse
-
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from model import ImageClassifier
+from models.model import ImageClassifier
 from trainer import Trainer
 
 from utils import load_mnist
@@ -40,6 +40,8 @@ def define_argparser():
 
 
 def main(config):
+
+    #os.environ['CUDA_VISIBLE_DEVICES'] = str(config.gpu_id)
     # Set device based on user defined configuration.
     device = torch.device('cpu') if config.gpu_id < 0 else torch.device(
         'cuda:%d' % config.gpu_id)
@@ -51,6 +53,7 @@ def main(config):
     print("Train:", x[0].shape, y[0].shape)
     print("Valid:", x[1].shape, y[1].shape)
 
+    # (60000, 28,28) -> (60000, 784)
     input_size = int(x[0].shape[-1])
     output_size = int(max(y[0])) + 1
 
