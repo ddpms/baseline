@@ -1,5 +1,5 @@
 import argparse
-import os
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -40,8 +40,6 @@ def define_argparser():
 
 
 def main(config):
-
-    #os.environ['CUDA_VISIBLE_DEVICES'] = str(config.gpu_id)
     # Set device based on user defined configuration.
     device = torch.device('cpu') if config.gpu_id < 0 else torch.device(
         'cuda:%d' % config.gpu_id)
